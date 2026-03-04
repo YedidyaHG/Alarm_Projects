@@ -21,10 +21,11 @@ df_raw, coord = load_data()
 # --- תפריט צד (Sidebar) לסינונים ---
 st.sidebar.header("מסננים")
 
-# 1. סינון תאריכים
-min_date = df_raw['time'].min().date()
-max_date = df_raw['time'].max().date()
-date_range = st.sidebar.date_input("בחר טווח תאריכים", [min_date, max_date])
+# 1. סינון תאריכים עם ברירת מחדל ספציפית
+start_default = pd.Timestamp('2026-02-28').date()
+end_default = pd.Timestamp('2026-03-04').date()
+
+date_range = st.sidebar.date_input("בחר טווח תאריכים", [start_default, end_default])
 
 # 2. סינון מדינת מקור (Origin)
 origins = df_raw['origin'].unique().tolist()
@@ -77,4 +78,5 @@ if not final_df.empty:
     # הצגת הטבלה מתחת
     st.write("נתונים מסוננים:", final_df[['cities', 'alarm_count']])
 else:
+
     st.warning("אין נתונים התואמים לסינון הנבחר.")
