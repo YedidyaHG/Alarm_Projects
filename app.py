@@ -5,8 +5,8 @@ from streamlit_folium import st_folium
 import branca.colormap as cm
 
 # הגדרת כותרת לעמוד
-st.set_page_config(page_title="מפת אזעקות אינטראקטיבית", layout="wide")
-st.title("מערכת ניתוח אזעקות - ישראל")
+st.set_page_config(page_title="מפת אזעקות ידידיה הס-גרין", layout="wide")
+st.title("ניתוח אזעקות לפי תאריכים")
 
 # טעינת הנתונים
 @st.cache_data
@@ -80,3 +80,4 @@ if not final_df.empty:
 else:
 
     st.warning("אין נתונים התואמים לסינון הנבחר.")
+
