@@ -3,86 +3,100 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 import branca.colormap as cm
+import plotly.express as px # ספרייה מצוינת לגרפים
+from datetime import date
 
-# הגדרת כותרת לעמוד
-st.set_page_config(page_title="מפת אזעקות ידידיה הס-גרין", layout="wide")
-st.title("ניתוח אזעקות לפי תאריכים")
+st.set_page_config(page_title="ניתוח אזעקות ישראל", layout="wide")
 
-# טעינת הנתונים
 @st.cache_data(ttl=3600)
 def load_data():
-    url = "https://raw.githubusercontent.com/yuval-harpaz/alarms/master/data/alarms.csv"     # הכתובת הישירה לקובץ של יובל הרפז
-    # טעינה מהאינטרנט במקום מהקובץ המקומי
+    url = "https://raw.githubusercontent.com/yuval-harpaz/alarms/master/data/alarms.csv"
     df = pd.read_csv(url)
-    # טעינת נתוני הקואורדינטות מהקובץ שלך בגיטהאב
     coord = pd.read_csv('coord.csv')
-    
     df['time'] = pd.to_datetime(df['time'])
     return df, coord
 
 df_raw, coord = load_data()
 
-# --- תפריט צד (Sidebar) לסינונים ---
+# --- Side Bar ---
 st.sidebar.header("מסננים")
+default_start = date(2026, 2, 28)
+default_end = date(2026, 3, 4)
+date_range = st.sidebar.date_input("טווח תאריכים", [default_start, default_end])
 
-# 1. סינון תאריכים עם ברירת מחדל ספציפית
-start_default = pd.Timestamp('2026-02-28').date()
-end_default = pd.Timestamp('2026-03-04').date()
+# סינון בסיסי לפי זמן
+mask = (df_raw['time'].dt.date >= date_range[0]) & (df_raw['time'].dt.date <= date_range[1])
+df_filtered = df_raw[mask]
 
-date_range = st.sidebar.date_input("בחר טווח תאריכים", [start_default, end_default])
+# יצירת טאבים לממשק נקי
+tab1, tab2, tab3 = st.tabs(["📍 מפת אזעקות", "📊 ניתוח עיר בודדת", "⚔️ השוואת ערים"])
 
-# 2. סינון מדינת מקור (Origin)
-origins = df_raw['origin'].unique().tolist()
-selected_origins = st.sidebar.multiselect("מקור הירי", origins, default=origins)
-
-# 3. סינון סוג איום (Description)
-threats = df_raw['description'].unique().tolist()
-selected_threats = st.sidebar.multiselect("סוג האיום", threats, default=threats)
-
-# --- עיבוד הנתונים לפי הסינון ---
-mask = (
-    (df_raw['time'].dt.date >= date_range[0]) & 
-    (df_raw['time'].dt.date <= date_range[1]) &
-    (df_raw['origin'].isin(selected_origins)) &
-    (df_raw['description'].isin(selected_threats))
-)
-filtered_df = df_raw[mask]
-
-# קיבוץ לפי עיר ומיזוג עם קואורדינטות
-summary_df = filtered_df.groupby("cities").size().reset_index(name='alarm_count')
-final_df = pd.merge(summary_df, coord, left_on='cities', right_on='loc', how='inner')
-
-# --- יצירת המפה ---
-if not final_df.empty:
-    colormap = cm.LinearColormap(
-        colors=['blue', 'green', 'yellow', 'orange', 'red'],
-        vmin=final_df["alarm_count"].min(), 
-        vmax=final_df["alarm_count"].max(),
-        caption='כמות אזעקות'
-    )
-
-    m = folium.Map(location=[31.5, 35.0], zoom_start=7)
-
-    for _, row in final_df.iterrows():
-        folium.CircleMarker(
-            location=(row['lat'], row['long']),
-            radius=8,
-            popup=f"{row['cities']}: {row['alarm_count']}",
-            color=colormap(row['alarm_count']),
-            fill=True,
-            fill_color=colormap(row['alarm_count']),
-            fill_opacity=0.7,
-        ).add_to(m)
-
-    colormap.add_to(m)
+# --- TAB 1: המפה (הקוד הקיים שלך) ---
+with tab1:
+    st.subheader("מפת אזעקות אינטראקטיבית")
+    summary_df = df_filtered.groupby("cities").size().reset_index(name='alarm_count')
+    final_df = pd.merge(summary_df, coord, left_on='cities', right_on='loc', how='inner')
     
-    # הצגת המפה ב-Streamlit
-    st_folium(m, width=1000, height=600)
+    if not final_df.empty:
+        m = folium.Map(location=[31.5, 35.0], zoom_start=7)
+        colormap = cm.LinearColormap(colors=['blue','green','yellow','orange','red'],
+                                   vmin=final_df["alarm_count"].min(), vmax=final_df["alarm_count"].max())
+        for _, row in final_df.iterrows():
+            folium.CircleMarker(location=(row['lat'], row['long']), radius=8,
+                                popup=f"{row['cities']}: {row['alarm_count']}",
+                                color=colormap(row['alarm_count']), fill=True).add_to(m)
+        st_folium(m, width=1000)
+    else:
+        st.write("אין נתונים לטווח זה")
+
+# --- TAB 2: ניתוח עיר בודדת ---
+with tab2:
+    st.subheader("ניתוח היסטורי לפי עיר")
+    city_list = sorted(df_raw['cities'].unique())
+    selected_city = st.selectbox("בחר עיר לניתוח:", city_list)
     
-    # הצגת הטבלה מתחת
-    st.write("נתונים מסוננים:", final_df[['cities', 'alarm_count']])
-else:
+    city_data = df_filtered[df_filtered['cities'] == selected_city]
+    
+    if not city_data.empty:
+        # גרף עמודות לפי זמן וצבע לפי מקור (origin)
+        fig = px.histogram(city_data, x="time", color="origin", 
+                           title=f"התפלגות אזעקות ב{selected_city} לפי מקור",
+                           labels={'time': 'זמן', 'count': 'כמות אזעקות', 'origin': 'מקור הירי'},
+                           barmode='stack')
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("לא נמצאו אזעקות לעיר זו בטווח התאריכים הנבחר.")
 
-    st.warning("אין נתונים התואמים לסינון הנבחר.")
-
-
+# --- TAB 3: השוואת ערים ---
+with tab3:
+    st.subheader("השוואה בין שתי ערים")
+    col1, col2 = st.columns(2)
+    with col1:
+        city1 = st.selectbox("עיר א':", city_list, index=0)
+    with col2:
+        city2 = st.selectbox("עיר ב':", city_list, index=1)
+    
+    comp_df = df_filtered[df_filtered['cities'].isin([city1, city2])]
+    
+    if not comp_df.empty:
+        # בחירת רזולוציית זמן
+        res = st.radio("רזולוציית זמן:", ["יום", "שבוע", "חודש"], horizontal=True)
+        res_map = {"יום": "D", "שבוע": "W", "חודש": "ME"}
+        
+        # עיבוד נתונים להשוואה
+        comp_df['period'] = comp_df['time'].dt.to_period(res_map[res]).dt.to_timestamp()
+        chart_data = comp_df.groupby(['period', 'cities']).size().reset_index(name='count')
+        
+        fig2 = px.bar(chart_data, x="period", y="count", color="cities",
+                      barmode='group', title=f"השוואת {city1} מול {city2}",
+                      labels={'period': 'זמן', 'count': 'כמות אזעקות', 'cities': 'עיר'})
+        st.plotly_chart(fig2, use_container_width=True)
+        
+        # הצגת סיכום מספרי
+        st.write(f"**סה''כ אזעקות בתקופה זו:**")
+        total1 = len(comp_df[comp_df['cities'] == city1])
+        total2 = len(comp_df[comp_df['cities'] == city2])
+        st.write(f"- {city1}: {total1}")
+        st.write(f"- {city2}: {total2}")
+    else:
+        st.info("אין נתונים להשוואה בטווח זה.")
