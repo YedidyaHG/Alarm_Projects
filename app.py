@@ -205,37 +205,43 @@ with tab3:
         st.info("אין מספיק נתונים להשוואה בטווח ובסינון שנבחר.")
 
 
-
     # --- TAB 4: עובדות מעניינות ---
     with tab4:
         st.subheader("💡 עובדות מעניינות")
         
-        # סינון זיהויי שווא כדי לא להטות את הסטטיסטיקה
+        # סינון זיהויי שווא
         df_stats = df_filtered[df_filtered['origin'] != 'FA'].copy()
         
         if not df_stats.empty:
             col1, col2 = st.columns(2)
+            
             with col1:
-                top_city = df_stats['cities'].value_counts().idxmax()
-                st.metric("העיר המטווחת ביותר", top_city)
+                # 1. המקום עם הכי הרבה + כמות
+                city_counts = df_stats['cities'].value_counts()
+                top_city = city_counts.idxmax()
+                top_city_val = city_counts.max()
+                st.metric("העיר המטווחת ביותר", top_city, f"{top_city_val} אזעקות")
                 
+                # 2. היום העמוס ביותר
                 top_day = df_stats['time'].dt.date.value_counts().idxmax()
-                st.metric("היום העמוס ביותר", top_day.strftime('%d/%m/%Y'))
+                top_day_val = df_stats['time'].dt.date.value_counts().max()
+                st.metric("היום העמוס ביותר", top_day.strftime('%d/%m/%Y'), f"{top_day_val} אזעקות")
     
             with col2:
-                city_counts = df_stats['cities'].value_counts()
+                # 3. המקום עם הכי פחות + כמות
                 bottom_city = city_counts.idxmin()
-                st.metric("העיר עם הכי פחות (מעל 0)", bottom_city)
+                bottom_city_val = city_counts.min()
+                st.metric("העיר עם הכי פחות (מעל 0)", bottom_city, f"{bottom_city_val} אזעקות")
                 
-                # יום רב זירתי
+                # 4. יום רב זירתי
                 enemies_per_day = df_stats.groupby(df_stats['time'].dt.date)['origin'].nunique()
                 top_enemy_day = enemies_per_day.idxmax()
                 enemies_list = df_stats[df_stats['time'].dt.date == top_enemy_day]['origin'].unique().tolist()
-                st.metric("יום רב-זירתי מקסימלי", top_enemy_day.strftime('%d/%m/%Y'))
+                st.metric("יום רב-זירתי מקסימלי", top_enemy_day.strftime('%d/%m/%Y'), f"{enemies_per_day.max()} גזרות")
                 st.caption(f"האויבים שתקפו: {', '.join(enemies_list)}")
     
             st.divider()
-            
+                
             # גרף שעות עם צבעי אויב
             st.write("### ⏰ השעה עם הסיכוי הכי גבוה לאזעקה")
             df_stats['hour'] = df_stats['time'].dt.hour
@@ -270,6 +276,7 @@ with tab3:
         
         # הצגת הטופס בתוך האפליקציה
         st.components.v1.iframe(form_url, height=800, scrolling=True)
+
 
 
 
