@@ -1,5 +1,6 @@
 pandas
 folium
-streamlit
+streamlit>=1.31.0
 streamlit-folium
 branca
+altair<5
