@@ -131,11 +131,17 @@ with tab2:
         
         st.plotly_chart(fig, use_container_width=True)
 
-        # גרף עוגה (מתחת לגרף ההיסטורי)
+        # חישוב סך האזעקות לעיר בטווח שנבחר
+        total_city_alerts = len(city_data)
+
+        # גרף עוגה עם כותרת דינמית
         enemy_counts = city_data['origin'].value_counts().reset_index()
         enemy_counts.columns = ['אויב', 'כמות']
+        
         fig_pie = px.pie(enemy_counts, values='כמות', names='אויב', hole=0.4,
-                         title=f"פילוח מקורות הירי הכולל ל{selected_city}")
+                         title=f"פילוח מקורות הירי ל{selected_city} (סך הכל: {total_city_alerts} אזעקות)",
+                         color_discrete_sequence=px.colors.qualitative.Pastel)
+        
         st.plotly_chart(fig_pie, use_container_width=True)
         
     else:
@@ -261,6 +267,7 @@ with tab3:
         
         # הצגת הטופס בתוך האפליקציה
         st.components.v1.iframe(form_url, height=800, scrolling=True)
+
 
 
 
