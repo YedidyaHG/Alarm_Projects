@@ -113,7 +113,7 @@ with tab3:
     
     if not comp_df.empty:
         res = st.radio("רזולוציית זמן לגרף:", ["יום", "שבוע", "חודש"], horizontal=True)
-        res_map = {"יום": "D", "שבוע": "W", "חודש": "ME"}
+        res_map = {"יום": "D", "שבוע": "W", "חודש": "M"}
         
         comp_df['period'] = comp_df['time'].dt.to_period(res_map[res]).dt.to_timestamp()
         chart_data = comp_df.groupby(['period', 'cities']).size().reset_index(name='count')
@@ -129,6 +129,7 @@ with tab3:
         st.write(f"- {city2}: {len(comp_df[comp_df['cities'] == city2])} אזעקות")
     else:
         st.info("אין מספיק נתונים להשוואה בטווח ובסינון שנבחר.")
+
 
 
 
