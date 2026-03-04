@@ -52,17 +52,30 @@ with tab1:
     summary_df = df_filtered.groupby("cities").size().reset_index(name='alarm_count')
     final_df = pd.merge(summary_df, coord, left_on='cities', right_on='loc', how='inner')
     
+    # בתוך tab1, תחת יצירת המפה:
     if not final_df.empty:
         m = folium.Map(location=[31.5, 35.0], zoom_start=7)
-        colormap = cm.LinearColormap(colors=['blue','green','yellow','orange','red'],
-                                   vmin=final_df["alarm_count"].min(), vmax=final_df["alarm_count"].max(),
-                                   caption='כמות אזעקות')
+        
+        # הגדרת הצבעים לפי הסדר שביקשת (מהנמוך לגבוה)
+        # ירוק כהה (מעט אזעקות) -> ירוק בהיר -> צהוב -> כתום -> אדום (הרבה אזעקות)
+        colormap = cm.LinearColormap(
+            colors=['#006400', '#90EE90', '#FFFF00', '#FFA500', '#FF0000'], 
+            vmin=final_df["alarm_count"].min(), 
+            vmax=final_df["alarm_count"].max(),
+            caption='כמות אזעקות'
+        )
+        
         for _, row in final_df.iterrows():
-            folium.CircleMarker(location=(row['lat'], row['long']), radius=8,
-                                popup=f"{row['cities']}: {row['alarm_count']}",
-                                color=colormap(row['alarm_count']), 
-                                fill=True, fill_color=colormap(row['alarm_count']),
-                                fill_opacity=0.7).add_to(m)
+            folium.CircleMarker(
+                location=(row['lat'], row['long']),
+                radius=8,
+                popup=f"{row['cities']}: {row['alarm_count']}",
+                color=colormap(row['alarm_count']), 
+                fill=True,
+                fill_color=colormap(row['alarm_count']), 
+                fill_opacity=0.7
+            ).add_to(m)
+            
         colormap.add_to(m)
         st_folium(m, width=1000, height=600)
     else:
@@ -116,3 +129,4 @@ with tab3:
         st.write(f"- {city2}: {len(comp_df[comp_df['cities'] == city2])} אזעקות")
     else:
         st.info("אין מספיק נתונים להשוואה בטווח ובסינון שנבחר.")
+
