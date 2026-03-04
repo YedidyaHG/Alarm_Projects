@@ -44,7 +44,7 @@ mask = (
 df_filtered = df_raw[mask]
 
 # יצירת טאבים לממשק נקי
-tab1, tab2, tab3, tab4 = st.tabs(["📍 מפת אזעקות", "📊 ניתוח עיר", "⚔️ השוואת ערים", "💡 עובדות מעניינות"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📍 מפת אזעקות", "📊 ניתוח עיר", "⚔️ השוואת ערים", "💡 עובדות מעניינות", "עזרו לנו להשתפר! 🚀"])
     
 # --- TAB 1: המפה ---
 with tab1:
@@ -220,7 +220,7 @@ with tab3:
                 city_counts = df_filtered['cities'].value_counts()
                 bottom_city = city_counts.idxmin()
                 bottom_city_val = city_counts.min()
-                st.metric("העיר עם הכי פחות אזעקות", bottom_city, f"{bottom_city_val} אזעקות")
+                st.metric("המקום עם הכי פחות אזעקות", bottom_city, f"{bottom_city_val} אזעקות")
                 
                 # היום עם הכי הרבה אויבים שונים
                 enemies_per_day = df_filtered.groupby(df_filtered['time'].dt.date)['origin'].nunique()
@@ -235,9 +235,19 @@ with tab3:
             st.info(f"📅 **היום השקט ביותר בטווח הנבחר:** {quietest_day.strftime('%d/%m/%Y')} (רק {quietest_val} אזעקות בכל הארץ)")
         else:
             st.write("אין מספיק נתונים לחישוב עובדות.")
+        
+    # --- TAB 5: פידבק ושיפורים ---
+    with tab5:
+        st.subheader("עזרו לנו להשתפר! 🚀")
+        st.write("יש לכם רעיון לפיצ'ר חדש? מצאתם טעות בנתונים? נשמח לשמוע.")
+        
+        # כתובת ה-Embed של הטופס שלך
+        form_url = "https://docs.google.com/forms/d/e/1FAIpQLSc6W8A2uUqYp3A-3z-zD3Y7Gz0yB4z5Z9q1-v9G7Gz0-Y8G0w/viewform?embedded=true"
+        
+        # הצגת הטופס בתוך ה-App
+        st.components.v1.iframe(form_url, height=800, scrolling=True)
     
-
-
+    
 
 
 
