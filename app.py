@@ -84,39 +84,51 @@ with tab1:
 # --- TAB 2: ניתוח עיר בודדת ---
 with tab2:
     st.subheader("ניתוח היסטורי לפי עיר")
-    city_list = sorted(df_raw['cities'].unique())
-    selected_city = st.selectbox("בחר עיר לניתוח:", city_list)
     
-    # סינון הנתונים כבר כולל את המקור וסוג האיום מה-Sidebar
+    # יצירת רשימת הערים
+    city_list = sorted(df_raw['cities'].unique().tolist())
+    
+    # מציאת האינדקס של קריית שמונה
+    try:
+        ks_index = city_list.index("קריית שמונה")
+    except ValueError:
+        ks_index = 0 # ברירת מחדל אם השם שונה בקובץ
+
+    selected_city = st.selectbox("בחר עיר לניתוח:", city_list, index=ks_index)
+    
     city_data = df_filtered[df_filtered['cities'] == selected_city]
     
     if not city_data.empty:
-        # היום הכי עמוס בעיר הספציפית
+        # היום הכי עמוס בעיר
         city_top_day = city_data['time'].dt.date.value_counts().idxmax()
         city_top_day_val = city_data['time'].dt.date.value_counts().max()
         
-        st.info(f"🏠 **ב{selected_city}, היום העמוס ביותר היה:** {city_top_day.strftime('%d/%m/%Y')} עם {city_top_day_val} אזעקות.")
+        st.info(f"🏠 **ב{selected_city}, היום העמוס ביותר בטווח הנבחר היה:** {city_top_day.strftime('%d/%m/%Y')} עם {city_top_day_val} אזעקות.")
         
-        # גרף אויבים - כמה אזעקות מכל אויב
-        st.write("### התפלגות לפי מקור ירי")
-        enemy_counts = city_data['origin'].value_counts().reset_index()
-        enemy_counts.columns = ['אויב', 'כמות']
+        # תצוגה של שתי עמודות: נתונים יבשים וגרף עוגה
+        col_facts, col_pie = st.columns(2)
         
-        fig_pie = px.pie(enemy_counts, values='כמות', names='אויב', 
-                         title=f"מקורות הירי לעבר {selected_city}",
-                         color_discrete_sequence=px.colors.qualitative.Pastel)
-        st.plotly_chart(fig_pie, use_container_width=True)
-        
-        # הגרף המקורי של הזמן (ה-Histogram)
-        # ... (הקוד הקיים שלך) ...
+        with col_facts:
+            st.write("### התפלגות לפי מקור ירי")
+            enemy_counts = city_data['origin'].value_counts().reset_index()
+            enemy_counts.columns = ['אויב', 'כמות']
+            st.table(enemy_counts) # הצגת טבלה פשוטה של הנתונים
+
+        with col_pie:
+            fig_pie = px.pie(enemy_counts, values='כמות', names='אויב', 
+                             hole=0.4, # הופך את זה לגרף דונאט מרשים
+                             color_discrete_sequence=px.colors.qualitative.Pastel)
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+        # גרף ההיסטוריה המקורי
+        st.write("### ציר זמן אזעקות")
         fig = px.histogram(city_data, x="time", color="origin", 
-                           title=f"התפלגות אזעקות ב{selected_city} (לפי המסננים שנבחרו)",
-                           labels={'time': 'זמן', 'count': 'כמות אזעקות', 'origin': 'מקור'},
-                           barmode='stack',
-                           color_discrete_sequence=px.colors.qualitative.Safe)
+                           labels={'time': 'זמן', 'count': 'כמות', 'origin': 'מקור'},
+                           barmode='stack')
         st.plotly_chart(fig, use_container_width=True)
+        
     else:
-        st.info(f"לא נמצאו אזעקות ב{selected_city} התואמות לסינון.")
+        st.info(f"לא נמצאו אזעקות ב{selected_city} בטווח התאריכים והמסננים שנבחרו.")
 
 # --- TAB 3: השוואת ערים ---
 with tab3:
@@ -213,6 +225,7 @@ with tab3:
         else:
             st.write("אין מספיק נתונים לחישוב עובדות.")
     
+
 
 
 
