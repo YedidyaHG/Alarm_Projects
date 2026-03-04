@@ -103,25 +103,49 @@ with tab2:
 # --- TAB 3: השוואת ערים ---
 with tab3:
     st.subheader("השוואה בין שתי ערים")
+    
+    # הופך את רשימת הערים לרשימה רגילה כדי שנוכל לחפש בה אינדקס
+    city_list = sorted(df_raw['cities'].unique().tolist())
+    
+    # 1. מציאת המיקום (index) של הערים שביקשת כברירת מחדל
+    try:
+        default_index_1 = city_list.index("תל אביב - דרום העיר ויפו")
+    except ValueError:
+        default_index_1 = 0 # אם לא מצא, יבחר את הראשונה ברשימה
+        
+    try:
+        default_index_2 = city_list.index("ירושלים - מרכז")
+    except ValueError:
+        default_index_2 = min(1, len(city_list)-1)
+
+    # 2. יצירת תיבות הבחירה עם ה-index שמצאנו
     col1, col2 = st.columns(2)
     with col1:
-        city1 = st.selectbox("עיר א':", city_list, index=0)
+        city1 = st.selectbox("עיר א':", city_list, index=default_index_1)
     with col2:
-        city2 = st.selectbox("עיר ב':", city_list, index=min(1, len(city_list)-1))
+        city2 = st.selectbox("עיר ב':", city_list, index=default_index_2)
     
-    comp_df = df_filtered[df_filtered['cities'].isin([city1, city2])]
+    # 3. סינון הנתונים להשוואה
+    comp_df = df_filtered[df_filtered['cities'].isin([city1, city2])].copy()
     
     if not comp_df.empty:
+        comp_df['time'] = pd.to_datetime(comp_df['time']) 
+        
         res = st.radio("רזולוציית זמן לגרף:", ["יום", "שבוע", "חודש"], horizontal=True)
-        res_map = {"יום": "D", "שבוע": "W", "חודש": "M"}
+        res_map = {"יום": "D", "שבוע": "W", "חודש": "M"} 
         
         comp_df['period'] = comp_df['time'].dt.to_period(res_map[res]).dt.to_timestamp()
         chart_data = comp_df.groupby(['period', 'cities']).size().reset_index(name='count')
         
+        # 4. יצירת הגרף
         fig2 = px.bar(chart_data, x="period", y="count", color="cities",
                       barmode='group', title=f"השוואת {city1} מול {city2}",
                       labels={'period': 'זמן', 'count': 'כמות אזעקות', 'cities': 'עיר'},
                       color_discrete_sequence=["#EF553B", "#636EFA"])
+        
+        # הוספת יישור לימין לגרף
+        fig2.update_layout(xaxis_title="זמן", yaxis_title="כמות אזעקות", legend_title="עיר")
+        
         st.plotly_chart(fig2, use_container_width=True)
         
         st.markdown(f"**סיכום בתקופה הנבחרת:**")
