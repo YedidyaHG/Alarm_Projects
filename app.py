@@ -59,7 +59,7 @@ with tab1:
         # הגדרת הצבעים לפי הסדר שביקשת (מהנמוך לגבוה)
         # ירוק כהה (מעט אזעקות) -> ירוק בהיר -> צהוב -> כתום -> אדום (הרבה אזעקות)
         colormap = cm.LinearColormap(
-            colors=['#006400', '#90EE90', '#FFFF00', '#FFA500', '#FF0000'], 
+            colors=['#ffffb2', '#fecc5c', '#fd8d3c', '#f03b20', '#bd0026']
             vmin=final_df["alarm_count"].min(), 
             vmax=final_df["alarm_count"].max(),
             caption='כמות אזעקות'
