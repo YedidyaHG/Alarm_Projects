@@ -85,65 +85,61 @@ with tab1:
 with tab2:
     st.subheader("ניתוח היסטורי לפי עיר")
     
-    # יצירת רשימת הערים
     city_list = sorted(df_raw['cities'].unique().tolist())
-    
-    # מציאת האינדקס של קריית שמונה
     try:
         ks_index = city_list.index("קריית שמונה")
     except ValueError:
-        ks_index = 0 # ברירת מחדל אם השם שונה בקובץ
+        ks_index = 0
 
     selected_city = st.selectbox("בחר עיר לניתוח:", city_list, index=ks_index)
     
-    city_data = df_filtered[df_filtered['cities'] == selected_city]
+    # שימוש ב-copy כדי לא לשנות את הדאטה המקורי
+    city_data = df_filtered[df_filtered['cities'] == selected_city].copy()
     
     if not city_data.empty:
-        # היום הכי עמוס בעיר
         city_top_day = city_data['time'].dt.date.value_counts().idxmax()
         city_top_day_val = city_data['time'].dt.date.value_counts().max()
-        
-        st.info(f"🏠 **ב{selected_city}, היום העמוס ביותר בטווח הנבחר היה:** {city_top_day.strftime('%d/%m/%Y')} עם {city_top_day_val} אזעקות.")
-        
-        # תצוגה של שתי עמודות: נתונים יבשים וגרף עוגה
-        col_facts, col_pie = st.columns(2)
-        
-        with col_facts:
-            st.write("### התפלגות לפי מקור ירי")
-            enemy_counts = city_data['origin'].value_counts().reset_index()
-            enemy_counts.columns = ['אויב', 'כמות']
-            st.table(enemy_counts) # הצגת טבלה פשוטה של הנתונים
+        st.info(f"🏠 **ב{selected_city}, היום העמוס ביותר היה:** {city_top_day.strftime('%d/%m/%Y')} עם {city_top_day_val} אזעקות.")
 
-        with col_pie:
-            fig_pie = px.pie(enemy_counts, values='כמות', names='אויב', 
-                             hole=0.4, # הופך את זה לגרף דונאט מרשים
-                             color_discrete_sequence=px.colors.qualitative.Pastel)
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-        # גרף ההיסטוריה המקורי
-        st.write("### ציר זמן אזעקות")
-        fig = px.histogram(city_data, x="time", color="origin", 
-                           labels={'time': 'זמן', 'count': 'כמות', 'origin': 'מקור'},
-                           barmode='stack')
+        # --- הוספת בחירת רזולוציה ---
+        res_city = st.radio("רזולוציית זמן לתצוגה:", ["יום", "שבוע", "חודש"], horizontal=True, key="res_city")
+        res_map_city = {"יום": "D", "שבוע": "W", "חודש": "M"}
         
-        # הוספת קווים שחורים ועיצוב העמודות
+        # יצירת עמודת זמן מקובצת
+        city_data['period'] = city_data['time'].dt.to_period(res_map_city[res_city]).dt.to_timestamp()
+        
+        # יצירת הגרף לפי ה-period החדש
+        fig = px.bar(city_data.groupby(['period', 'origin']).size().reset_index(name='count'), 
+                     x="period", y="count", color="origin", 
+                     labels={'period': 'זמן', 'count': 'כמות אזעקות', 'origin': 'מקור הירי'},
+                     barmode='stack',
+                     title=f"התפלגות אזעקות ב{selected_city} לפי {res_city}")
+
+        # עיצוב העמודות (דקות עם קווים שחורים)
         fig.update_traces(
-            marker_line_width=1.5,      # עובי הקו השחור
-            marker_line_color="black"   # צבע הקו
+            marker_line_width=1,
+            marker_line_color="black"
         )
         
-        # הוספת מרווח בין העמודות כדי שיהיו פחות "שמנות"
         fig.update_layout(
-            bargap=0.2,                 # ככל שהמספר גדול יותר (בין 0 ל-1), העמודה תהיה דקה יותר
+            bargap=0.3, # הופך את העמודות ליותר דקות (רווח גדול יותר)
             xaxis_title="זמן",
             yaxis_title="כמות אזעקות",
-            legend_title="מקור הירי"
+            legend_title="מקור",
+            hovermode="x unified"
         )
         
         st.plotly_chart(fig, use_container_width=True)
+
+        # גרף עוגה (מתחת לגרף ההיסטורי)
+        enemy_counts = city_data['origin'].value_counts().reset_index()
+        enemy_counts.columns = ['אויב', 'כמות']
+        fig_pie = px.pie(enemy_counts, values='כמות', names='אויב', hole=0.4,
+                         title=f"פילוח מקורות הירי הכולל ל{selected_city}")
+        st.plotly_chart(fig_pie, use_container_width=True)
         
     else:
-        st.info(f"לא נמצאו אזעקות ב{selected_city} בטווח התאריכים והמסננים שנבחרו.")
+        st.info(f"לא נמצאו אזעקות ב{selected_city} בטווח שנבחר.")
 
 # --- TAB 3: השוואת ערים ---
 with tab3:
@@ -240,6 +236,7 @@ with tab3:
         else:
             st.write("אין מספיק נתונים לחישוב עובדות.")
     
+
 
 
 
