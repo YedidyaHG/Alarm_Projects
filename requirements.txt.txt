@@ -1,5 +1,0 @@
-pandas
-folium
-streamlit
-streamlit-folium
-branca
