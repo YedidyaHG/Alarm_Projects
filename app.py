@@ -59,7 +59,7 @@ with tab1:
         # הגדרת הצבעים לפי הסדר שביקשת (מהנמוך לגבוה)
         # ירוק כהה (מעט אזעקות) -> ירוק בהיר -> צהוב -> כתום -> אדום (הרבה אזעקות)
         colormap = cm.LinearColormap(
-            colors=['#d6604d', '#f4a582', '#f7f7f7', '#92c5de', '#2166ac'],
+            colors=['#006400', '#90EE90', '#FFFF00', '#FFA500', '#FF0000'],
             vmin=float(final_df["alarm_count"].min()), 
             vmax=float(final_df["alarm_count"].max()),
             caption='כמות אזעקות'
@@ -129,6 +129,7 @@ with tab3:
         st.write(f"- {city2}: {len(comp_df[comp_df['cities'] == city2])} אזעקות")
     else:
         st.info("אין מספיק נתונים להשוואה בטווח ובסינון שנבחר.")
+
 
 
 
