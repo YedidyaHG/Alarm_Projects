@@ -9,10 +9,14 @@ st.set_page_config(page_title="מפת אזעקות ידידיה הס-גרין", 
 st.title("ניתוח אזעקות לפי תאריכים")
 
 # טעינת הנתונים
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_data():
-    df = pd.read_csv('alarms.csv')
+    url = "https://raw.githubusercontent.com/yuval-harpaz/alarms/master/data/alarms.csv"     # הכתובת הישירה לקובץ של יובל הרפז
+    # טעינה מהאינטרנט במקום מהקובץ המקומי
+    df = pd.read_csv(url)
+    # טעינת נתוני הקואורדינטות מהקובץ שלך בגיטהאב
     coord = pd.read_csv('coord.csv')
+    
     df['time'] = pd.to_datetime(df['time'])
     return df, coord
 
@@ -80,4 +84,5 @@ if not final_df.empty:
 else:
 
     st.warning("אין נתונים התואמים לסינון הנבחר.")
+
 
