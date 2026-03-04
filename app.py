@@ -18,11 +18,15 @@ def load_data():
 
 df_raw, coord = load_data()
 
-# איחוד שמות כפולים
+# הסרת שורות של יישובים ספציפיים
+cities_to_remove = ['תקומה', 'חוות יזרעם']
+df_raw = df_raw[~df_raw['cities'].isin(cities_to_remove)]
+# איחוד שמות כפולים 
 df_raw['cities'] = df_raw['cities'].replace({
     'ינוח-ג\'ת': 'ינוח ג\'ת', 
     'ינוח ג\'ת ': 'ינוח ג\'ת',
-    'כפר יסיף': 'כפר יאסיף'})
+    'כפר יסיף': 'כפר יאסיף'
+})
 
 # --- תפריט צד (Sidebar) עם כל המסננים ---
 st.sidebar.header("מסננים גלובליים")
@@ -279,6 +283,7 @@ with tab3:
         
         # הצגת הטופס בתוך האפליקציה
         st.components.v1.iframe(form_url, height=800, scrolling=True)
+
 
 
 
