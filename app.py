@@ -114,7 +114,7 @@ with tab3:
         default_index_1 = 0 # אם לא מצא, יבחר את הראשונה ברשימה
         
     try:
-        default_index_2 = city_list.index("ירושלים - מרכז")
+        default_index_2 = city_list.index("ירושלים - מערב")
     except ValueError:
         default_index_2 = min(1, len(city_list)-1)
 
@@ -153,6 +153,7 @@ with tab3:
         st.write(f"- {city2}: {len(comp_df[comp_df['cities'] == city2])} אזעקות")
     else:
         st.info("אין מספיק נתונים להשוואה בטווח ובסינון שנבחר.")
+
 
 
 
