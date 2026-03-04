@@ -44,8 +44,8 @@ mask = (
 df_filtered = df_raw[mask]
 
 # יצירת טאבים לממשק נקי
-tab1, tab2, tab3 = st.tabs(["📍 מפת אזעקות", "📊 ניתוח עיר בודדת", "⚔️ השוואת ערים"])
-
+tab1, tab2, tab3, tab4 = st.tabs(["📍 מפת אזעקות", "📊 ניתוח עיר", "⚔️ השוואת ערים", "💡 עובדות מעניינות"])
+    
 # --- TAB 1: המפה ---
 with tab1:
     st.subheader("מפת אזעקות אינטראקטיבית")
@@ -91,6 +91,24 @@ with tab2:
     city_data = df_filtered[df_filtered['cities'] == selected_city]
     
     if not city_data.empty:
+        # היום הכי עמוס בעיר הספציפית
+        city_top_day = city_data['time'].dt.date.value_counts().idxmax()
+        city_top_day_val = city_data['time'].dt.date.value_counts().max()
+        
+        st.info(f"🏠 **ב{selected_city}, היום העמוס ביותר היה:** {city_top_day.strftime('%d/%m/%Y')} עם {city_top_day_val} אזעקות.")
+        
+        # גרף אויבים - כמה אזעקות מכל אויב
+        st.write("### התפלגות לפי מקור ירי")
+        enemy_counts = city_data['origin'].value_counts().reset_index()
+        enemy_counts.columns = ['אויב', 'כמות']
+        
+        fig_pie = px.pie(enemy_counts, values='כמות', names='אויב', 
+                         title=f"מקורות הירי לעבר {selected_city}",
+                         color_discrete_sequence=px.colors.qualitative.Pastel)
+        st.plotly_chart(fig_pie, use_container_width=True)
+        
+        # הגרף המקורי של הזמן (ה-Histogram)
+        # ... (הקוד הקיים שלך) ...
         fig = px.histogram(city_data, x="time", color="origin", 
                            title=f"התפלגות אזעקות ב{selected_city} (לפי המסננים שנבחרו)",
                            labels={'time': 'זמן', 'count': 'כמות אזעקות', 'origin': 'מקור'},
@@ -156,6 +174,45 @@ with tab3:
 
 
 
+    # --- TAB 4: עובדות מעניינות ---
+    with tab4:
+        st.subheader("ניתוח נתונים מהיר")
+        
+        if not df_filtered.empty:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # המקום עם הכי הרבה אזעקות
+                top_city = df_filtered['cities'].value_counts().idxmax()
+                top_city_val = df_filtered['cities'].value_counts().max()
+                st.metric("העיר המטווחת ביותר", top_city, f"{top_city_val} אזעקות")
+                
+                # היום עם הכי הרבה אזעקות
+                top_day = df_filtered['time'].dt.date.value_counts().idxmax()
+                top_day_val = df_filtered['time'].dt.date.value_counts().max()
+                st.metric("היום העמוס ביותר", top_day.strftime('%d/%m/%Y'), f"{top_day_val} אזעקות")
+    
+            with col2:
+                # המקום עם הכי פחות (אבל מעל 0)
+                city_counts = df_filtered['cities'].value_counts()
+                bottom_city = city_counts.idxmin()
+                bottom_city_val = city_counts.min()
+                st.metric("העיר עם הכי פחות אזעקות", bottom_city, f"{bottom_city_val} אזעקות")
+                
+                # היום עם הכי הרבה אויבים שונים
+                enemies_per_day = df_filtered.groupby(df_filtered['time'].dt.date)['origin'].nunique()
+                top_enemy_day = enemies_per_day.idxmax()
+                top_enemy_count = enemies_per_day.max()
+                st.metric("יום רב-זירתי (הכי הרבה אויבים)", top_enemy_day.strftime('%d/%m/%Y'), f"{top_enemy_count} מקורות ירי")
+    
+            # בונוס: היום הכי שקט (באופן כללי בכל הארץ)
+            all_days_count = df_filtered.groupby(df_filtered['time'].dt.date).size()
+            quietest_day = all_days_count.idxmin()
+            quietest_val = all_days_count.min()
+            st.info(f"📅 **היום השקט ביותר בטווח הנבחר:** {quietest_day.strftime('%d/%m/%Y')} (רק {quietest_val} אזעקות בכל הארץ)")
+        else:
+            st.write("אין מספיק נתונים לחישוב עובדות.")
+    
 
 
 
