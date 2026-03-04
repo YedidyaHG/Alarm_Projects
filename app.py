@@ -241,13 +241,11 @@ with tab3:
         st.subheader("עזרו לנו להשתפר! 🚀")
         st.write("יש לכם רעיון לפיצ'ר חדש? מצאתם טעות בנתונים? נשמח לשמוע.")
         
-        # כתובת ה-Embed של הטופס שלך
-        form_url = "https://docs.google.com/forms/d/e/1FAIpQLSc6W8A2uUqYp3A-3z-zD3Y7Gz0yB4z5Z9q1-v9G7Gz0-Y8G0w/viewform?embedded=true"
+        # המרת הלינק שלך לפורמט הטמעה (embedded)
+        form_url = "https://docs.google.com/forms/d/e/1FAIpQLScieeNG66uGquJR_lEwIUp3Ynsl6TKDjRkvoOQ7gFC2Pnrl1Q/viewform?embedded=true"
         
-        # הצגת הטופס בתוך ה-App
+        # הצגת הטופס בתוך האפליקציה
         st.components.v1.iframe(form_url, height=800, scrolling=True)
-    
-    
 
 
 
