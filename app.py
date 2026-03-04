@@ -199,42 +199,56 @@ with tab3:
 
     # --- TAB 4: עובדות מעניינות ---
     with tab4:
-        st.subheader("ניתוח נתונים מהיר")
+        st.subheader("💡 עובדות מעניינות על האזעקות")
         
         if not df_filtered.empty:
             col1, col2 = st.columns(2)
             
             with col1:
-                # המקום עם הכי הרבה אזעקות
+                # 1. המקום עם הכי הרבה
                 top_city = df_filtered['cities'].value_counts().idxmax()
                 top_city_val = df_filtered['cities'].value_counts().max()
                 st.metric("העיר המטווחת ביותר", top_city, f"{top_city_val} אזעקות")
                 
-                # היום עם הכי הרבה אזעקות
+                # 2. היום העמוס ביותר
                 top_day = df_filtered['time'].dt.date.value_counts().idxmax()
                 top_day_val = df_filtered['time'].dt.date.value_counts().max()
                 st.metric("היום העמוס ביותר", top_day.strftime('%d/%m/%Y'), f"{top_day_val} אזעקות")
     
             with col2:
-                # המקום עם הכי פחות (אבל מעל 0)
+                # 3. המקום עם הכי פחות (מעל 0)
                 city_counts = df_filtered['cities'].value_counts()
                 bottom_city = city_counts.idxmin()
                 bottom_city_val = city_counts.min()
-                st.metric("המקום עם הכי פחות אזעקות", bottom_city, f"{bottom_city_val} אזעקות")
+                st.metric("העיר עם הכי פחות (מעל 0)", bottom_city, f"{bottom_city_val} אזעקות")
                 
-                # היום עם הכי הרבה אויבים שונים
+                # 4. יום רב זירתי עם פירוט אויבים
                 enemies_per_day = df_filtered.groupby(df_filtered['time'].dt.date)['origin'].nunique()
                 top_enemy_day = enemies_per_day.idxmax()
                 top_enemy_count = enemies_per_day.max()
-                st.metric("יום רב-זירתי (הכי הרבה אויבים)", top_enemy_day.strftime('%d/%m/%Y'), f"{top_enemy_count} מקורות ירי")
+                
+                # שליפת שמות האויבים באותו יום
+                enemies_list = df_filtered[df_filtered['time'].dt.date == top_enemy_day]['origin'].unique().tolist()
+                enemies_str = ", ".join(enemies_list)
+                
+                st.metric("יום רב-זירתי מקסימלי", top_enemy_day.strftime('%d/%m/%Y'), f"{top_enemy_count} גזרות")
+                st.caption(f"האויבים שתקפו: {enemies_str}")
     
-            # בונוס: היום הכי שקט (באופן כללי בכל הארץ)
+            st.divider()
+            
+            # 5. שעת השיא (עובדה חדשה)
+            df_filtered['hour'] = df_filtered['time'].dt.hour
+            peak_hour = df_filtered['hour'].value_counts().idxmax()
+            st.write(f"⏰ **שעת השיא:** רוב האזעקות בטווח זה התרחשו סביב השעה **{peak_hour}:00**.")
+    
+            # 6. היום הכי שקט
             all_days_count = df_filtered.groupby(df_filtered['time'].dt.date).size()
             quietest_day = all_days_count.idxmin()
             quietest_val = all_days_count.min()
-            st.info(f"📅 **היום השקט ביותר בטווח הנבחר:** {quietest_day.strftime('%d/%m/%Y')} (רק {quietest_val} אזעקות בכל הארץ)")
+            st.success(f"🕊️ **היום השקט ביותר:** {quietest_day.strftime('%d/%m/%Y')} עם {quietest_val} אזעקות בלבד.")
+            
         else:
-            st.write("אין מספיק נתונים לחישוב עובדות.")
+            st.info("אין מספיק נתונים להצגת עובדות.")
         
     # --- TAB 5: פידבק ושיפורים ---
     with tab5:
@@ -246,6 +260,7 @@ with tab3:
         
         # הצגת הטופס בתוך האפליקציה
         st.components.v1.iframe(form_url, height=800, scrolling=True)
+
 
 
 
