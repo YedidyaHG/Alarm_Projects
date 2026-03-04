@@ -125,6 +125,21 @@ with tab2:
         fig = px.histogram(city_data, x="time", color="origin", 
                            labels={'time': 'זמן', 'count': 'כמות', 'origin': 'מקור'},
                            barmode='stack')
+        
+        # הוספת קווים שחורים ועיצוב העמודות
+        fig.update_traces(
+            marker_line_width=1.5,      # עובי הקו השחור
+            marker_line_color="black"   # צבע הקו
+        )
+        
+        # הוספת מרווח בין העמודות כדי שיהיו פחות "שמנות"
+        fig.update_layout(
+            bargap=0.2,                 # ככל שהמספר גדול יותר (בין 0 ל-1), העמודה תהיה דקה יותר
+            xaxis_title="זמן",
+            yaxis_title="כמות אזעקות",
+            legend_title="מקור הירי"
+        )
+        
         st.plotly_chart(fig, use_container_width=True)
         
     else:
@@ -225,6 +240,7 @@ with tab3:
         else:
             st.write("אין מספיק נתונים לחישוב עובדות.")
     
+
 
 
 
