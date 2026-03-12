@@ -165,44 +165,53 @@ with tab3:
     if 'num_cities' not in st.session_state:
         st.session_state.num_cities = 2
 
-    # כפתור להוספת עיר
-    if st.button("➕ הוסף עיר להשוואה"):
-        st.session_state.num_cities += 1
-
-    # כפתור לאיפוס (אופציונלי)
-    if st.button("🔄 איפוס השוואה"):
-        st.session_state.num_cities = 2
+    # שורת כפתורי שליטה
+    col_btn1, col_btn2, _ = st.columns([1, 1, 2])
+    with col_btn1:
+        if st.button("➕ הוסף עיר להשוואה"):
+            st.session_state.num_cities += 1
+            st.rerun() # מרענן כדי להציג את התיבה החדשה מיד
+    with col_btn2:
+        if st.button("🔄 איפוס השוואה"):
+            st.session_state.num_cities = 2
+            st.rerun()
 
     selected_cities = []
     city_list = sorted(df_raw['cities'].unique().tolist())
 
-    # יצירת תיבות בחירה לפי המספר שב-session_state
-    cols = st.columns(st.session_state.num_cities)
+    # הגדרת שמות ברירת המחדל
+    default_names = ["קריית שמונה", "תל אביב - מרכז העיר"]
+
+    # יצירת תיבות בחירה
+    cols = st.columns(min(st.session_state.num_cities, 4)) # מקסימום 4 עמודות בשורה לנראות טובה
     
     for i in range(st.session_state.num_cities):
-        with cols[i]:
-            # הגדרת ברירת מחדל שונה לכל תיבה כדי שלא יהיו זהות בהתחלה
-            default_idx = i % len(city_list)
-            city = st.selectbox(f"עיר {i+1}:", city_list, index=default_idx, key=f"city_comp_{i}")
+        # מחליט באיזו עמודה לשים את התיבה (מציג בשורות של 4)
+        col_idx = i % 4
+        with cols[col_idx]:
+            # לוגיקה לבחירת אינדקס ברירת מחדל
+            if i < len(default_names) and default_names[i] in city_list:
+                d_idx = city_list.index(default_names[i])
+            else:
+                d_idx = i % len(city_list) # ברירת מחדל רנדומלית לשאר התיבות
+            
+            city = st.selectbox(f"עיר {i+1}:", city_list, index=d_idx, key=f"city_comp_{i}")
             selected_cities.append(city)
 
     # סינון הנתונים להשוואה
     compare_data = df_filtered[df_filtered['cities'].isin(selected_cities)].copy()
 
     if not compare_data.empty:
-        # בחירת רזולוציה
+        st.write("---")
         res_comp = st.radio("רזולוציה:", ["יום", "שבוע", "חודש"], horizontal=True, key="res_comp_multi")
         res_map = {"יום": "D", "שבוע": "W", "חודש": "M"}
         
         compare_data['period'] = compare_data['time'].dt.to_period(res_map[res_comp]).dt.to_timestamp()
-        
-        # קיבוץ נתונים לפי זמן ועיר
         comp_grouped = compare_data.groupby(['period', 'cities']).size().reset_index(name='count')
         
-        # יצירת הגרף
         fig_comp = px.bar(comp_grouped, x="period", y="count", color="cities",
-                          barmode="group", # עמודות אחת ליד השנייה להשוואה קלה
-                          title=f"השוואת אזעקות לאורך זמן ({res_comp})",
+                          barmode="group",
+                          title=f"השוואת אזעקות: {' vs '.join(selected_cities)}",
                           labels={'period': 'זמן', 'count': 'כמות אזעקות', 'cities': 'עיר'})
 
         fig_comp.update_traces(marker_line_width=1, marker_line_color="black")
