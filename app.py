@@ -19,7 +19,7 @@ def load_data():
 df_raw, coord = load_data()
 
 # הסרת שורות של יישובים ספציפיים
-cities_to_remove = ['תקומה וחוות יזרעם']
+cities_to_remove = ['תקומה וחוות יזרעם', 'חיפה-מפרץ']
 df_raw = df_raw[~df_raw['cities'].isin(cities_to_remove)]
 # איחוד שמות כפולים 
 df_raw['cities'] = df_raw['cities'].replace({
@@ -283,6 +283,7 @@ with tab3:
         
         # הצגת הטופס בתוך האפליקציה
         st.components.v1.iframe(form_url, height=800, scrolling=True)
+
 
 
 
