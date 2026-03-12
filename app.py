@@ -159,57 +159,58 @@ with tab2:
 
 # --- TAB 3: השוואת ערים ---
 with tab3:
-    st.subheader("השוואה בין שתי ערים")
-    
-    # הופך את רשימת הערים לרשימה רגילה כדי שנוכל לחפש בה אינדקס
-    city_list = sorted(df_raw['cities'].unique().tolist())
-    
-    # 1. מציאת המיקום (index) של הערים שביקשת כברירת מחדל
-    try:
-        default_index_1 = city_list.index("תל אביב - דרום העיר ויפו")
-    except ValueError:
-        default_index_1 = 0 # אם לא מצא, יבחר את הראשונה ברשימה
-        
-    try:
-        default_index_2 = city_list.index("ירושלים - מערב")
-    except ValueError:
-        default_index_2 = min(1, len(city_list)-1)
+    st.subheader("⚔️ השוואת כמות אזעקות בין ערים")
 
-    # 2. יצירת תיבות הבחירה עם ה-index שמצאנו
-    col1, col2 = st.columns(2)
-    with col1:
-        city1 = st.selectbox("עיר א':", city_list, index=default_index_1)
-    with col2:
-        city2 = st.selectbox("עיר ב':", city_list, index=default_index_2)
+    # אתחול מספר הערים ב-session_state אם הוא לא קיים
+    if 'num_cities' not in st.session_state:
+        st.session_state.num_cities = 2
+
+    # כפתור להוספת עיר
+    if st.button("➕ הוסף עיר להשוואה"):
+        st.session_state.num_cities += 1
+
+    # כפתור לאיפוס (אופציונלי)
+    if st.button("🔄 איפוס השוואה"):
+        st.session_state.num_cities = 2
+
+    selected_cities = []
+    city_list = sorted(df_raw['cities'].unique().tolist())
+
+    # יצירת תיבות בחירה לפי המספר שב-session_state
+    cols = st.columns(st.session_state.num_cities)
     
-    # 3. סינון הנתונים להשוואה
-    comp_df = df_filtered[df_filtered['cities'].isin([city1, city2])].copy()
-    
-    if not comp_df.empty:
-        comp_df['time'] = pd.to_datetime(comp_df['time']) 
+    for i in range(st.session_state.num_cities):
+        with cols[i]:
+            # הגדרת ברירת מחדל שונה לכל תיבה כדי שלא יהיו זהות בהתחלה
+            default_idx = i % len(city_list)
+            city = st.selectbox(f"עיר {i+1}:", city_list, index=default_idx, key=f"city_comp_{i}")
+            selected_cities.append(city)
+
+    # סינון הנתונים להשוואה
+    compare_data = df_filtered[df_filtered['cities'].isin(selected_cities)].copy()
+
+    if not compare_data.empty:
+        # בחירת רזולוציה
+        res_comp = st.radio("רזולוציה:", ["יום", "שבוע", "חודש"], horizontal=True, key="res_comp_multi")
+        res_map = {"יום": "D", "שבוע": "W", "חודש": "M"}
         
-        res = st.radio("רזולוציית זמן לגרף:", ["יום", "שבוע", "חודש"], horizontal=True)
-        res_map = {"יום": "D", "שבוע": "W", "חודש": "M"} 
+        compare_data['period'] = compare_data['time'].dt.to_period(res_map[res_comp]).dt.to_timestamp()
         
-        comp_df['period'] = comp_df['time'].dt.to_period(res_map[res]).dt.to_timestamp()
-        chart_data = comp_df.groupby(['period', 'cities']).size().reset_index(name='count')
+        # קיבוץ נתונים לפי זמן ועיר
+        comp_grouped = compare_data.groupby(['period', 'cities']).size().reset_index(name='count')
         
-        # 4. יצירת הגרף
-        fig2 = px.bar(chart_data, x="period", y="count", color="cities",
-                      barmode='group', title=f"השוואת {city1} מול {city2}",
-                      labels={'period': 'זמן', 'count': 'כמות אזעקות', 'cities': 'עיר'},
-                      color_discrete_sequence=["#EF553B", "#636EFA"])
+        # יצירת הגרף
+        fig_comp = px.bar(comp_grouped, x="period", y="count", color="cities",
+                          barmode="group", # עמודות אחת ליד השנייה להשוואה קלה
+                          title=f"השוואת אזעקות לאורך זמן ({res_comp})",
+                          labels={'period': 'זמן', 'count': 'כמות אזעקות', 'cities': 'עיר'})
+
+        fig_comp.update_traces(marker_line_width=1, marker_line_color="black")
+        fig_comp.update_layout(bargap=0.2, hovermode="x unified")
         
-        # הוספת יישור לימין לגרף
-        fig2.update_layout(xaxis_title="זמן", yaxis_title="כמות אזעקות", legend_title="עיר")
-        
-        st.plotly_chart(fig2, use_container_width=True)
-        
-        st.markdown(f"**סיכום בתקופה הנבחרת:**")
-        st.write(f"- {city1}: {len(comp_df[comp_df['cities'] == city1])} אזעקות")
-        st.write(f"- {city2}: {len(comp_df[comp_df['cities'] == city2])} אזעקות")
+        st.plotly_chart(fig_comp, use_container_width=True)
     else:
-        st.info("אין מספיק נתונים להשוואה בטווח ובסינון שנבחר.")
+        st.info("בחר ערים כדי להציג השוואה.")
 
 
     # --- TAB 4: עובדות מעניינות ---
@@ -283,6 +284,7 @@ with tab3:
         
         # הצגת הטופס בתוך האפליקציה
         st.components.v1.iframe(form_url, height=800, scrolling=True)
+
 
 
 
