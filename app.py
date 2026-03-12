@@ -220,6 +220,20 @@ with tab3:
         st.plotly_chart(fig_comp, use_container_width=True)
     else:
         st.info("בחר ערים כדי להציג השוואה.")
+    
+    st.write("### 📈 סיכום נתונים להשוואה")
+    
+    # חישוב סך האזעקות לכל עיר שנבחרה בטווח הזמן
+    summary_data = compare_data['cities'].value_counts()
+    
+    # יצירת עמודות להצגת הסיכומים (מספר העמודות כמספר הערים שנבחרו)
+    cols_sum = st.columns(len(selected_cities))
+    
+    for idx, city_name in enumerate(selected_cities):
+        with cols_sum[idx]:
+            # שליפת הכמות עבור העיר הספציפית (אם אין אזעקות, נציג 0)
+            total_alerts = summary_data.get(city_name, 0)
+            st.metric(label=f"סה\"כ {city_name}", value=f"{total_alerts} אזעקות")
 
 
     # --- TAB 4: עובדות מעניינות ---
@@ -293,6 +307,7 @@ with tab3:
         
         # הצגת הטופס בתוך האפליקציה
         st.components.v1.iframe(form_url, height=800, scrolling=True)
+
 
 
 
