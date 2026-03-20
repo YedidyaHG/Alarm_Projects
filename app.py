@@ -33,7 +33,7 @@ st.sidebar.header("מסננים גלובליים")
 
 # 1. סינון תאריכים
 default_start = date(2026, 2, 28)
-default_end = date(2026, 3, 19)
+default_end = date(2026, 3, 29)
 date_range = st.sidebar.date_input("טווח תאריכים", [default_start, default_end])
 
 # 2. סינון מקור הירי (Origin)
